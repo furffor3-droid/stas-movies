@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+:root{--bg:#0f1724;--card:rgba(11,18,32,0.8);--muted:#9aa4b2;--accent:#6ee7b7;--glass:rgba(255,255,255,0.03)}
+*{box-sizing:border-box}
+body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:24px;
+background:url('https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg') no-repeat center center fixed;
+background-size:cover;
+color:#e6eef6;}
+.container{max-width:1100px;margin:0 auto;background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
+h1{font-size:20px;margin:0 0 12px}
+.row{display:flex;gap:12px;align-items:center}
+input[type=text], input[type=date]{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px;border-radius:8px;min-width:0;width:100%}
+button{background:var(--accent);border:none;padding:8px 12px;border-radius:10px;color:#02211a;cursor:pointer}
+button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px 8px;text-align:left;border-bottom:1px dashed rgba(255,255,255,0.03);vertical-align:top}
+th{color:var(--muted);font-size:13px}
+.empty{color:var(--muted);padding:18px;text-align:center}
+.stars{display:flex;gap:4px;cursor:pointer}
+.star{font-size:18px;color:#334155}
+.star.active{color:#facc15}
+.status-icon{height:100px;width:auto;border-radius:8px;cursor:pointer;object-fit:contain;filter:grayscale(100%);transition:filter 0.3s ease}
+.status-icon.confirmed{filter:none}
+.note-input {width:100%;min-height:140px; max-height:300px;background:rgba(255,255,255,0.05);color:inherit;border-radius:8px;border:none;padding:8px;font-family:inherit;resize:vertical;}
+@media (max-width:640px){.row{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Кіно-вечори Стасяна і Танюшки 🎬</h1>
+<div class="row" style="justify-content:space-between;margin-bottom:12px">
+<div style="flex:1;margin-right:12px">
+<input id="titleInput" type="text" placeholder="Назва фільму" />
+</div>
+<div>
+<button id="addBtn">Додати/Зберегти</button>
+<button id="clearBtn" class="ghost">Очистити</button>
+</div>
+</div>
+<div class="row" style="margin-bottom:12px">
+<div style="flex:1;">
+<label for="filterDate">Фільтрувати по даті перегляду: </label>
+<input id="filterDate" type="date" />
+</div>
+</div>
+<table id="moviesTable">
+<thead>
+<tr>
+<th>Статус 1</th>
+<th>Статус 2</th>
+<th>Назва</th>
+<th>Дати</th>
+<th>Оцінки</th>
+<th>Дії</th>
+<th>Нотатки</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+<div id="empty" class="empty" style="display:none">Поки що список пустий — додай перший фільм вище.</div>
+</div>
+<script>
+const defaultMovies = [
+{title:"Мій сусід Тоторо", date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false},
+{title:"Навсікая з долини вітрів", date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false}
+];
+const STORAGE_KEY='moviesList_dual';
+let movies=[];
+const tbody=document.getElementById('tbody');
+const titleInput=document.getElementById('titleInput');
+const addBtn=document.getElementById('addBtn');
+const clearBtn=document.getElementById('clearBtn');
+const emptyDiv=document.getElementById('empty');
+const filterDateInput=document.getElementById('filterDate');
+
+function load(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){ try{ movies = JSON.parse(raw); } catch(e){ movies = [...defaultMovies]; } }
+  else { movies = [...defaultMovies]; save(); }
+  render();
+}
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(movies)); }
+
+function renderStars(rating, idx, person){
+  let html = '<div class="stars" data-idx="'+idx+'" data-person="'+person+'">';
+  for(let i=1;i<=10;i++){ html += `<span class="star ${i<=rating?'active':''}" data-value="${i}">★</span>`; }
+  html += `<span class="count"> (${rating}★)</span>`;
+  html += '</div>';
+  return html;
+}
+
+function render(){
+  tbody.innerHTML='';
+  let filteredMovies = movies;
+  const filterDate = filterDateInput.value;
+  if(filterDate){ filteredMovies = movies.filter(m => m.date === filterDate); }
+  emptyDiv.style.display = filteredMovies.length === 0 ? 'block' : 'none';
+
+  filteredMovies.forEach((m, idx)=>{
+    const tr = document.createElement('tr');
+    tr.dataset.idx = idx;
+    tr.innerHTML = `
+      <td><img src="${m.confirmed ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed ? 'confirmed' : ''}" data-idx="${idx}" data-status="1" /></td>
+      <td><img src="${m.confirmed2 ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed2 ? 'confirmed' : ''}" data-idx="${idx}" data-status="2" /></td>
+      <td><strong>${m.title}</strong></td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label>Переглянуто: <input type="date" value="${m.date}" class="date-input" /></label>
+          <label>Заплановано: <input type="date" value="${m.planned}" class="planned-input" /></label>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div>Стас: ${renderStars(m.stas, idx, 'stas')}</div>
+          <div>Таня: ${renderStars(m.tanya, idx, 'tanya')}</div>
+        </div>
+      </td>
+      <td style="width:1%; text-align:center;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button class="link edit-btn" title="Редагувати" style="font-size:16px;padding:4px;">✂️</button>
+          <button class="link delete-btn" title="Видалити" style="font-size:16px;padding:4px;">🗑️</button>
+        </div>
+      </td>
+      <td><textarea class="note-input" maxlength="300">${m.note || ''}</textarea></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+tbody.addEventListener('click', (e) => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  const idx = parseInt(tr.dataset.idx, 10);
+
+  if (e.target.classList.contains('delete-btn')) {
+    if (confirm('Видалити цей фільм?')) {
+      movies.splice(idx, 1);
+      save();
+      render();
+    }
+  }
+
+  if (e.target.classList.contains('edit-btn')) {
+    titleInput.value = movies[idx].title;
+    addBtn.dataset.editIndex = idx;
+    addBtn.textContent = 'Зберегти зміни';
+  }
+
+  if (e.target.classList.contains('star')) {
+    const person = e.target.parentElement.dataset.person;
+    const val = parseInt(e.target.dataset.value, 10);
+    movies[idx][person] = movies[idx][person] === val ? 0 : val;
+    save();
+    render();
+  }
+
+  if (e.target.classList.contains('status-icon')) {
+    const status = e.target.dataset.status;
+    if (status === "1") movies[idx].confirmed = !movies[idx].confirmed;
+    if (status === "2") movies[idx].confirmed2 = !movies[idx].confirmed2;
+    save();
+    render();
+  }
+});
+
+tbody.addEventListener('input', (e) => {
+  const tr = e.target.closest('tr');
+  if (!tr) return;
+  const idx = parseInt(tr.dataset.idx, 10);
+
+  if (e.target.classList.contains('note-input')) {
+    movies[idx].note = e.target.value;
+    save();
+  }
+
+  if (e.target.classList.contains('date-input')) {
+    movies[idx].date = e.target.value;
+    save();
+  }
+
+  if (e.target.classList.contains('planned-input')) {
+    movies[idx].planned = e.target.value;
+    save();
+  }
+});
+
+addBtn.onclick = () => {
+  const title = titleInput.value.trim();
+  if (!title) {
+    alert('Введи назву фільму');
+    return;
+  }
+
+  if (addBtn.dataset.editIndex !== undefined) {
+    const idx = parseInt(addBtn.dataset.editIndex, 10);
+    movies[idx].title = title;
+    delete addBtn.dataset.editIndex;
+    addBtn.textContent = 'Додати/Зберегти';
+  } else {
+    movies.push({ title, date: '', planned: '', stas: 0, tanya: 0, note: '', confirmed: false, confirmed2: false });
+  }
+
+  titleInput.value = '';
+  save();
+  render();
+};
+
+clearBtn.onclick = () => {
+  titleInput.value = '';
+  delete addBtn.dataset.editIndex;
+  addBtn.textContent = 'Додати/Зберегти';
+};
+
+filterDateInput.onchange = () => {
+  render();
+};
+
+load();
+</script>
+</body>
+</html>
