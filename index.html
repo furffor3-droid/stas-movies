@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 <style>
 :root{--bg:#0f1724;--card:rgba(11,18,32,0.8);--muted:#9aa4b2;--accent:#6ee7b7;--glass:rgba(255,255,255,0.03)}
 *{box-sizing:border-box}
@@ -57,6 +59,7 @@ th{color:var(--muted);font-size:13px}
 <th>Оцінки</th>
 <th>Дії</th>
 <th>Нотатки</th>
+<th>Котик</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -64,12 +67,18 @@ th{color:var(--muted);font-size:13px}
 <div id="empty" class="empty" style="display:none">Поки що список пустий — додай перший фільм вище.</div>
 </div>
 <script>
-const defaultMovies = [
-{title:"Мій сусід Тоторо", date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false},
-{title:"Навсікая з долини вітрів", date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false}
-];
-const STORAGE_KEY='moviesList_dual';
-let movies=[];
+// Firebase config (заміни на свої дані з Firebase Console)
+const firebaseConfig = {
+  apiKey: "AIza....",
+  authDomain: "movies-night.firebaseapp.com",
+  projectId: "movies-night",
+  storageBucket: "movies-night.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcdef123456"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 const tbody=document.getElementById('tbody');
 const titleInput=document.getElementById('titleInput');
 const addBtn=document.getElementById('addBtn');
@@ -77,171 +86,110 @@ const clearBtn=document.getElementById('clearBtn');
 const emptyDiv=document.getElementById('empty');
 const filterDateInput=document.getElementById('filterDate');
 
-
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyDw9RivcKmJ04i_9gCUQ9sNv7oG-ahFZAs",
-    authDomain: "stas-tanya-movies.firebaseapp.com",
-    projectId: "stas-tanya-movies",
-    storageBucket: "stas-tanya-movies.firebasestorage.app",
-    messagingSenderId: "546344518068",
-    appId: "1:546344518068:web:c428355eb153cfb94d32e1"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  
-function load(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(raw){ try{ movies = JSON.parse(raw); } catch(e){ movies = [...defaultMovies]; } }
-  else { movies = [...defaultMovies]; save(); }
-  render();
-}
-
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(movies)); }
-
-function renderStars(rating, idx, person){
-  let html = '<div class="stars" data-idx="'+idx+'" data-person="'+person+'">';
+function renderStars(rating, id, person){
+  let html = '<div class="stars" data-id="'+id+'" data-person="'+person+'">';
   for(let i=1;i<=10;i++){ html += `<span class="star ${i<=rating?'active':''}" data-value="${i}">★</span>`; }
   html += `<span class="count"> (${rating}★)</span>`;
   html += '</div>';
   return html;
 }
 
-function render(){
-  tbody.innerHTML='';
-  let filteredMovies = movies;
-  const filterDate = filterDateInput.value;
-  if(filterDate){ filteredMovies = movies.filter(m => m.date === filterDate); }
-  emptyDiv.style.display = filteredMovies.length === 0 ? 'block' : 'none';
+function renderMovie(doc){
+  const m = doc.data();
+  const tr = document.createElement('tr');
+  tr.dataset.id = doc.id;
+  tr.innerHTML = `
+    <td><img src="${m.confirmed ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed ? 'confirmed' : ''}" data-status="1" /></td>
+    <td><img src="${m.confirmed2 ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed2 ? 'confirmed' : ''}" data-status="2" /></td>
+    <td><strong>${m.title}</strong></td>
+    <td>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <label>Переглянуто: <input type="date" value="${m.date||''}" class="date-input" /></label>
+        <label>Заплановано: <input type="date" value="${m.planned||''}" class="planned-input" /></label>
+      </div>
+    </td>
+    <td>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div>Стас: ${renderStars(m.stas||0, doc.id, 'stas')}</div>
+        <div>Таня: ${renderStars(m.tanya||0, doc.id, 'tanya')}</div>
+      </div>
+    </td>
+    <td style="width:1%; text-align:center;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <button class="link delete-btn" title="Видалити" style="font-size:16px;padding:4px;">🗑️</button>
+      </div>
+    </td>
+    <td><textarea class="note-input" maxlength="300">${m.note||''}</textarea></td>
+    <td>${m.planned ? '<img src="https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg" style="height:60px;width:auto;" />' : ''}</td>
+  `;
+  tbody.appendChild(tr);
+}
 
-  filteredMovies.forEach((m, idx)=>{
-    const tr = document.createElement('tr');
-    tr.dataset.idx = idx;
-    tr.innerHTML = `
-      <td><img src="${m.confirmed ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed ? 'confirmed' : ''}" data-idx="${idx}" data-status="1" /></td>
-      <td><img src="${m.confirmed2 ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed2 ? 'confirmed' : ''}" data-idx="${idx}" data-status="2" /></td>
-      <td><strong>${m.title}</strong></td>
-      <td>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <label>Переглянуто: <input type="date" value="${m.date}" class="date-input" /></label>
-          <label>Заплановано: <input type="date" value="${m.planned}" class="planned-input" /></label>
-        </div>
-      </td>
-      <td>
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <div>Стас: ${renderStars(m.stas, idx, 'stas')}</div>
-          <div>Таня: ${renderStars(m.tanya, idx, 'tanya')}</div>
-        </div>
-      </td>
-      <td style="width:1%; text-align:center;">
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <button class="link edit-btn" title="Редагувати" style="font-size:16px;padding:4px;">✂️</button>
-          <button class="link delete-btn" title="Видалити" style="font-size:16px;padding:4px;">🗑️</button>
-        </div>
-      </td>
-      <td><textarea class="note-input" maxlength="300">${m.note || ''}</textarea></td>
-    `;
-    tbody.appendChild(tr);
+function load(){
+  db.collection("movies").onSnapshot(snapshot => {
+    tbody.innerHTML='';
+    if(snapshot.empty){
+      emptyDiv.style.display = 'block';
+    } else {
+      emptyDiv.style.display = 'none';
+      snapshot.forEach(doc => renderMovie(doc));
+    }
   });
 }
-tbody.addEventListener('click', (e) => {
-  const tr = e.target.closest('tr');
-  if (!tr) return;
-  const idx = parseInt(tr.dataset.idx, 10);
-
-  if (e.target.classList.contains('delete-btn')) {
-    if (confirm('Видалити цей фільм?')) {
-      movies.splice(idx, 1);
-      save();
-      render();
-    }
-  }
-
-  if (e.target.classList.contains('edit-btn')) {
-    titleInput.value = movies[idx].title;
-    addBtn.dataset.editIndex = idx;
-    addBtn.textContent = 'Зберегти зміни';
-  }
-
-  if (e.target.classList.contains('star')) {
-    const person = e.target.parentElement.dataset.person;
-    const val = parseInt(e.target.dataset.value, 10);
-    movies[idx][person] = movies[idx][person] === val ? 0 : val;
-    save();
-    render();
-  }
-
-  if (e.target.classList.contains('status-icon')) {
-    const status = e.target.dataset.status;
-    if (status === "1") movies[idx].confirmed = !movies[idx].confirmed;
-    if (status === "2") movies[idx].confirmed2 = !movies[idx].confirmed2;
-    save();
-    render();
-  }
-});
-
-tbody.addEventListener('input', (e) => {
-  const tr = e.target.closest('tr');
-  if (!tr) return;
-  const idx = parseInt(tr.dataset.idx, 10);
-
-  if (e.target.classList.contains('note-input')) {
-    movies[idx].note = e.target.value;
-    save();
-  }
-
-  if (e.target.classList.contains('date-input')) {
-    movies[idx].date = e.target.value;
-    save();
-  }
-
-  if (e.target.classList.contains('planned-input')) {
-    movies[idx].planned = e.target.value;
-    save();
-  }
-});
 
 addBtn.onclick = () => {
   const title = titleInput.value.trim();
-  if (!title) {
-    alert('Введи назву фільму');
-    return;
+  if (!title) { alert('Введи назву фільму'); return; }
+  db.collection("movies").add({
+    title, date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false
+  });
+  titleInput.value='';
+};
+
+clearBtn.onclick = () => { titleInput.value=''; };
+
+tbody.addEventListener('click', e => {
+  const tr = e.target.closest('tr');
+  if(!tr) return;
+  const id = tr.dataset.id;
+
+  if(e.target.classList.contains('delete-btn')){
+    if(confirm('Видалити цей фільм?')) db.collection("movies").doc(id).delete();
   }
 
-  if (addBtn.dataset.editIndex !== undefined) {
-    const idx = parseInt(addBtn.dataset.editIndex, 10);
-    movies[idx].title = title;
-    delete addBtn.dataset.editIndex;
-    addBtn.textContent = 'Додати/Зберегти';
-  } else {
-    movies.push({ title, date: '', planned: '', stas: 0, tanya: 0, note: '', confirmed: false, confirmed2: false });
-    
+  if(e.target.classList.contains('star')){
+    const person = e.target.parentElement.dataset.person;
+    const val = parseInt(e.target.dataset.value,10);
+    db.collection("movies").doc(id).update({ [person]: val });
   }
 
-  titleInput.value = '';
-  save();
-  render();
-};
+  if(e.target.classList.contains('status-icon')){
+    const status = e.target.dataset.status;
+    const field = status==='1' ? 'confirmed' : 'confirmed2';
+    db.collection("movies").doc(id).update({ [field]: !tr.querySelector(`[data-status='${status}']`).classList.contains('confirmed') });
+  }
+});
 
-clearBtn.onclick = () => {
-  titleInput.value = '';
-  delete addBtn.dataset.editIndex;
-  addBtn.textContent = 'Додати/Зберегти';
-};
+tbody.addEventListener('input', e => {
+  const tr = e.target.closest('tr');
+  if(!tr) return;
+  const id = tr.dataset.id;
 
-filterDateInput.onchange = () => {
-  render();
-};
+  if(e.target.classList.contains('note-input')){
+    db.collection("movies").doc(id).update({ note: e.target.value });
+  }
+
+  if(e.target.classList.contains('date-input')){
+    db.collection("movies").doc(id).update({ date: e.target.value });
+  }
+
+  if(e.target.classList.contains('planned-input')){
+    db.collection("movies").doc(id).update({ planned: e.target.value });
+  }
+});
 
 load();
-
 </script>
-
 </body>
 </html>
+
