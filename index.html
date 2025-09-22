@@ -113,20 +113,6 @@ function renderStars(rating, idx, person){
   return html;
 }
 
-function addMovie(title) {
-  db.collection("movies").add({
-    title: title,
-    date: new Date().toISOString(),
-    note: "",
-    stas: 0,
-    tanya: 0,
-    confirmed: false,
-    confirmed2: false
-  }).then(() => {
-    console.log("Фільм додано!");
-  });
-}
-
 function render(){
   tbody.innerHTML='';
   let filteredMovies = movies;
@@ -235,7 +221,7 @@ addBtn.onclick = () => {
     addBtn.textContent = 'Додати/Зберегти';
   } else {
     movies.push({ title, date: '', planned: '', stas: 0, tanya: 0, note: '', confirmed: false, confirmed2: false });
-    addMovie(title);
+    
   }
 
   titleInput.value = '';
