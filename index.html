@@ -169,20 +169,27 @@ tbody.addEventListener('click', e => {
   }
 });
 
+let noteTimers = {};
+
 tbody.addEventListener('input', e => {
   const tr = e.target.closest('tr');
-  if(!tr) return;
+  if (!tr) return;
   const id = tr.dataset.id;
 
-  if(e.target.classList.contains('note-input')){
-    db.collection("movies").doc(id).update({ note: e.target.value });
+  if (e.target.classList.contains('note-input')) {
+    clearTimeout(noteTimers[id]);
+    const value = e.target.value;
+    noteTimers[id] = setTimeout(() => {
+      db.collection("movies").doc(id).update({ note: value });
+      console.log("Нотатка збережена для", id);
+    }, 1000); // 1 секунда затримки
   }
 
-  if(e.target.classList.contains('date-input')){
+  if (e.target.classList.contains('date-input')) {
     db.collection("movies").doc(id).update({ date: e.target.value });
   }
 
-  if(e.target.classList.contains('planned-input')){
+  if (e.target.classList.contains('planned-input')) {
     db.collection("movies").doc(id).update({ planned: e.target.value });
   }
 });
