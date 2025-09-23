@@ -8,10 +8,15 @@
 <style>
 :root{--bg:#0f1724;--card:rgba(11,18,32,0.8);--muted:#9aa4b2;--accent:#6ee7b7;--glass:rgba(255,255,255,0.03)}
 *{box-sizing:border-box}
-body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:24px;
-background:url('https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg') no-repeat center center fixed;
-background-size:cover;
-color:#e6eef6;}
+body {
+  font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+  margin: 0;
+  padding: 24px;
+  background: url('...') no-repeat center center fixed;
+  background-size: cover;
+  color: #e6eef6;
+  transition: background-image 0.6s ease-in-out; /* ⬅️ ось тут */
+}
 tr[draggable="true"] {
   cursor: grab;
 }
@@ -49,6 +54,7 @@ th{color:var(--muted);font-size:13px}
 <button id="clearBtn" class="ghost">Очистити</button>
 <button id="resetBtn" class="ghost">Очистити все</button>
 <button id="randomBtn">🎲 Випадковий фільм</button>
+<button id="toggleBgBtn" class="ghost">🌄 Змінити фон</button>
 </div>
 </div>
 <div class="row" style="margin-bottom:12px">
@@ -238,6 +244,21 @@ randomBtn.onclick = () => {
     const randomDoc = docs[Math.floor(Math.random() * docs.length)];
     alert("Сьогодні дивимось: " + randomDoc.data().title);
   });
+};
+const toggleBgBtn = document.getElementById('toggleBgBtn');
+
+const backgrounds = [
+  "https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg",
+  "https://tse4.mm.bing.net/th/id/OIP.Ch1-ePkhdrp9DIU5piI2ZQHaEK?rs=1&pid=ImgDetMain&o=7&rm=3",
+  "https://image.tmdb.org/t/p/original/uYxqCto2sr1zjdKpoEP0QcPdFxi.jpg"
+  "https://kinoukr.com/uploads/posts/2024-03/w1500_48648953.jpg"
+];
+
+let currentBg = 0;
+
+toggleBgBtn.onclick = () => {
+  currentBg = (currentBg + 1) % backgrounds.length;
+  document.body.style.backgroundImage = `url('${backgrounds[currentBg]}')`;
 };
 let noteTimers = {};
 
