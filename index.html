@@ -12,6 +12,12 @@ body{font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;margin:0;padding:24px;
 background:url('https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg') no-repeat center center fixed;
 background-size:cover;
 color:#e6eef6;}
+tr[draggable="true"] {
+  cursor: grab;
+}
+tr[draggable="true"]:active {
+  cursor: grabbing;
+}
 .container{max-width:1100px;margin:0 auto;background:var(--card);padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);}
 h1{font-size:20px;margin:0 0 12px}
 .row{display:flex;gap:12px;align-items:center}
@@ -41,6 +47,8 @@ th{color:var(--muted);font-size:13px}
 <div>
 <button id="addBtn">Додати/Зберегти</button>
 <button id="clearBtn" class="ghost">Очистити</button>
+<button id="resetBtn" class="ghost">Очистити все</button>
+<button id="randomBtn">🎲 Випадковий фільм</button>
 </div>
 </div>
 <div class="row" style="margin-bottom:12px">
@@ -129,10 +137,10 @@ function renderMovie(doc) {
     <td><textarea class="note-input" maxlength="300">${m.note || ''}</textarea></td>
     <td>
   ${m.confirmed ? 
-    '<img src="https://www.meme-arsenal.com/memes/59976a5388e4e572de3b7e51527f80f8.jpg" style="height:60px;width:auto;" />' :
+    '<img src="https://www.meme-arsenal.com/memes/59976a5388e4e572de3b7e51527f80f8.jpg" style="height:80px;width:auto;" />' :
     m.planned ? 
-    '<img src="https://i.pinimg.com/736x/6f/82/21/6f82217f4d9c79a72962e3d4613865bc.jpg" style="height:60px;width:auto;" />' :
-    '<img src="https://media.tenor.com/oOob9PaWKM8AAAAM/angry-kitten.jng" style="height:60px;width:auto;" />'
+    '<img src="https://i.pinimg.com/736x/6f/82/21/6f82217f4d9c79a72962e3d4613865bc.jpg" style="height:80px;width:auto;" />' :
+    '<img src=""https://media.tenor.com/oOob9PaWKM8AAAAM/angry-kitten.gif" style="height:80px;width:auto;" />'
   }
 </td>
   `;
@@ -214,7 +222,23 @@ tbody.addEventListener('click', e => {
     db.collection("movies").doc(id).update({ [field]: !tr.querySelector(`[data-status='${status}']`).classList.contains('confirmed') });
   }
 });
-
+const resetBtn = document.getElementById('resetBtn');
+resetBtn.onclick = () => {
+  if (confirm("Видалити всі фільми?")) {
+    db.collection("movies").get().then(snapshot => {
+      snapshot.forEach(doc => db.collection("movies").doc(doc.id).delete());
+    });
+  }
+};
+const randomBtn = document.getElementById('randomBtn');
+randomBtn.onclick = () => {
+  db.collection("movies").get().then(snapshot => {
+    const docs = snapshot.docs;
+    if (docs.length === 0) return alert("Список пустий!");
+    const randomDoc = docs[Math.floor(Math.random() * docs.length)];
+    alert("Сьогодні дивимось: " + randomDoc.data().title);
+  });
+};
 let noteTimers = {};
 
 tbody.addEventListener('input', e => {
