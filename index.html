@@ -40,6 +40,18 @@ th{color:var(--muted);font-size:13px}
 .status-icon.confirmed{filter:none}
 .note-input {width:100%;min-height:140px; max-height:300px;background:rgba(255,255,255,0.05);color:inherit;border-radius:8px;border:none;padding:8px;font-family:inherit;resize:vertical;}
 @media (max-width:640px){.row{flex-direction:column;align-items:stretch}}
+.bg-thumb {
+  height: 80px;
+  width: auto;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  box-shadow: 0 0 4px rgba(255,255,255,0.2);
+}
+.bg-thumb:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
 </style>
 </head>
 <body>
@@ -78,6 +90,15 @@ th{color:var(--muted);font-size:13px}
 </thead>
 <tbody id="tbody"></tbody>
 </table>
+  <div id="bgGallery" style="margin-top:24px;">
+  <h2 style="font-size:16px;">🎨 Вибери фон:</h2>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <img class="bg-thumb" src="https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg" />
+    <img class="bg-thumb" src="https://tse4.mm.bing.net/th/id/OIP.Ch1-ePkhdrp9DIU5piI2ZQHaEK?rs=1&pid=ImgDetMain&o=7&rm=3" />
+    <img class="bg-thumb" src="https://image.tmdb.org/t/p/original/uYxqCto2sr1zjdKpoEP0QcPdFxi.jpg" />
+    <img class="bg-thumb" src="https://kinoukr.com/uploads/posts/2024-03/w1500_48648953.jpg" />
+  </div>
+</div>
 <div id="empty" class="empty" style="display:none">Поки що список пустий — додай перший фільм вище.</div>
 </div>
 <script>
@@ -245,8 +266,6 @@ randomBtn.onclick = () => {
     alert("Сьогодні дивимось: " + randomDoc.data().title);
   });
 };
-const toggleBgBtn = document.getElementById('toggleBgBtn');
-
 const backgrounds = [
   "https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg",
   "https://tse4.mm.bing.net/th/id/OIP.Ch1-ePkhdrp9DIU5piI2ZQHaEK?rs=1&pid=ImgDetMain&o=7&rm=3",
@@ -256,9 +275,17 @@ const backgrounds = [
 
 let currentBg = 0;
 
+const savedBg = localStorage.getItem('selectedBackground');
+if (savedBg) {
+  document.body.style.backgroundImage = `url('${savedBg}')`;
+  currentBg = backgrounds.indexOf(savedBg);
+}
+const toggleBgBtn = document.getElementById('toggleBgBtn');
 toggleBgBtn.onclick = () => {
   currentBg = (currentBg + 1) % backgrounds.length;
-  document.body.style.backgroundImage = `url('${backgrounds[currentBg]}')`;
+  const selectedBg = backgrounds[currentBg];
+  document.body.style.backgroundImage = `url('${selectedBg}')`;
+  localStorage.setItem('selectedBackground', selectedBg); 
 };
 let noteTimers = {};
 
