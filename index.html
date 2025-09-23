@@ -85,32 +85,40 @@ const clearBtn=document.getElementById('clearBtn');
 const emptyDiv=document.getElementById('empty');
 const filterDateInput=document.getElementById('filterDate');
 
-function renderStars(rating, id, person){
-  let html = '<div class="stars" data-id="'+id+'" data-person="'+person+'">';
-  for(let i=1;i<=10;i++){ html += `<span class="star ${i<=rating?'active':''}" data-value="${i}">★</span>`; }
+function renderStars(rating, id, person) {
+  let html = `<div class="stars" data-id="${id}" data-person="${person}">`;
+  html += `<span class="star ${rating === 0 ? 'active' : ''}" data-value="0" title="Без оцінки">⨉</span>`;
+  for (let i = 1; i <= 10; i++) {
+    html += `<span class="star ${i <= rating ? 'active' : ''}" data-value="${i}">★</span>`;
+  }
   html += `<span class="count"> (${rating}★)</span>`;
-  html += '</div>';
+  html += `</div>`;
   return html;
 }
 
-function renderMovie(doc){
+function renderMovie(doc) {
   const m = doc.data();
   const tr = document.createElement('tr');
   tr.dataset.id = doc.id;
+  tr.setAttribute('draggable', 'true');
+  tr.setAttribute('ondragstart', 'dragStart(event)');
+  tr.setAttribute('ondrop', 'drop(event)');
+  tr.setAttribute('ondragover', 'allowDrop(event)');
+
   tr.innerHTML = `
     <td><img src="${m.confirmed ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed ? 'confirmed' : ''}" data-status="1" /></td>
     <td><img src="${m.confirmed2 ? 'https://i.pinimg.com/736x/f3/8e/a0/f38ea03f11e5810387cfc38898be03eb.jpg' : 'https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg'}" class="status-icon ${m.confirmed2 ? 'confirmed' : ''}" data-status="2" /></td>
     <td><strong>${m.title}</strong></td>
     <td>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <label>Переглянуто: <input type="date" value="${m.date||''}" class="date-input" /></label>
-        <label>Заплановано: <input type="date" value="${m.planned||''}" class="planned-input" /></label>
+        <label>Переглянуто: <input type="date" value="${m.date || ''}" class="date-input" /></label>
+        <label>Заплановано: <input type="date" value="${m.planned || ''}" class="planned-input" /></label>
       </div>
     </td>
     <td>
       <div style="display:flex;flex-direction:column;gap:4px;">
-        <div>Стас: ${renderStars(m.stas||0, doc.id, 'stas')}</div>
-        <div>Таня: ${renderStars(m.tanya||0, doc.id, 'tanya')}</div>
+        <div>Стас: ${renderStars(m.stas || 0, doc.id, 'stas')}</div>
+        <div>Таня: ${renderStars(m.tanya || 0, doc.id, 'tanya')}</div>
       </div>
     </td>
     <td style="width:1%; text-align:center;">
@@ -118,16 +126,35 @@ function renderMovie(doc){
         <button class="link delete-btn" title="Видалити" style="font-size:16px;padding:4px;">🗑️</button>
       </div>
     </td>
-    <td><textarea class="note-input" maxlength="300">${m.note||''}</textarea></td>
+    <td><textarea class="note-input" maxlength="300">${m.note || ''}</textarea></td>
     <td>${m.planned ? '<img src="https://i.pinimg.com/736x/1f/68/81/1f6881ae0d62f95235dcd13a90d4d8ed.jpg" style="height:60px;width:auto;" />' : ''}</td>
   `;
+
   tbody.appendChild(tr);
 }
+let draggedId = null;
 
-function load(){
-  db.collection("movies").onSnapshot(snapshot => {
-    tbody.innerHTML='';
-    if(snapshot.empty){
+function dragStart(e) {
+  draggedId = e.target.closest('tr').dataset.id;
+}
+
+function allowDrop(e) {
+  e.preventDefault();
+}
+
+function drop(e) {
+  e.preventDefault();
+  const targetId = e.target.closest('tr').dataset.id;
+  if (!draggedId || !targetId || draggedId === targetId) return;
+
+  const now = Date.now();
+  db.collection("movies").doc(draggedId).update({ order: now });
+  db.collection("movies").doc(targetId).update({ order: now + 1 });
+}
+function load() {
+  db.collection("movies").orderBy("order").onSnapshot(snapshot => {
+    tbody.innerHTML = '';
+    if (snapshot.empty) {
       emptyDiv.style.display = 'block';
     } else {
       emptyDiv.style.display = 'none';
@@ -138,13 +165,25 @@ function load(){
 
 addBtn.onclick = () => {
   const title = titleInput.value.trim();
-  if (!title) { alert('Введи назву фільму'); return; }
-  db.collection("movies").add({
-    title, date:'', planned:'', stas:0, tanya:0, note:'', confirmed:false, confirmed2:false
-  });
-  titleInput.value='';
-};
+  if (!title) {
+    alert('Введи назву фільму');
+    return;
+  }
 
+  db.collection("movies").add({
+    title,
+    date: '',
+    planned: '',
+    stas: 0,
+    tanya: 0,
+    note: '',
+    confirmed: false,
+    confirmed2: false,
+    order: Date.now() // ⬅️ ось тут додається порядок
+  });
+
+  titleInput.value = '';
+};
 clearBtn.onclick = () => { titleInput.value=''; };
 
 tbody.addEventListener('click', e => {
