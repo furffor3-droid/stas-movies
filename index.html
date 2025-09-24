@@ -6,6 +6,32 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
 <style>
+  body.cinema-mode {
+  background-color: black !important;
+  color: white;
+  transition: all 0.5s ease;
+}
+
+#cinemaOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  font-size: 24px;
+  text-align: center;
+  padding: 20px;
+}
+
+#cinemaOverlay button {
+  margin-top: 20px;
+  font-size: 18px;
+}
 :root{--bg:#0f1724;--card:rgba(11,18,32,0.8);--muted:#9aa4b2;--accent:#6ee7b7;--glass:rgba(255,255,255,0.03)}
 *{box-sizing:border-box}
 body {
@@ -56,12 +82,19 @@ th{color:var(--muted);font-size:13px}
 </head>
 <body>
 <div class="container">
+  <div id="cinemaOverlay" style="display:none;">
+  <div id="selectedMovieTitle">🎬 Сьогодні дивимось: ...</div>
+  <div id="countdownTimer">⏳ Починаємо через: 10 сек</div>
+  <audio id="cinemaMusic" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
+  <button onclick="endCinemaMode()">❌ Вийти з режиму</button>
+</div>
 <h1>Кіно-вечори Стасяна і Танюшки 🎬</h1>
 <div class="row" style="justify-content:space-between;margin-bottom:12px">
 <div style="flex:1;margin-right:12px">
 <input id="titleInput" type="text" placeholder="Назва фільму" />
 </div>
 <div>
+<button id="startCinemaBtn">🎥 Почати вечір</button>
 <button id="addBtn">Додати/Зберегти</button>
 <button id="clearBtn" class="ghost">Очистити</button>
 <button id="resetBtn" class="ghost">Очистити все</button>
@@ -102,6 +135,42 @@ th{color:var(--muted);font-size:13px}
 <div id="empty" class="empty" style="display:none">Поки що список пустий — додай перший фільм вище.</div>
 </div>
 <script>
+const startCinemaBtn = document.getElementById('startCinemaBtn');
+const cinemaOverlay = document.getElementById('cinemaOverlay');
+const selectedMovieTitle = document.getElementById('selectedMovieTitle');
+const countdownTimer = document.getElementById('countdownTimer');
+const cinemaMusic = document.getElementById('cinemaMusic');
+
+startCinemaBtn.onclick = () => {
+  db.collection("movies").get().then(snapshot => {
+    const docs = snapshot.docs;
+    if (docs.length === 0) return alert("Список пустий!");
+    const randomDoc = docs[Math.floor(Math.random() * docs.length)];
+    const title = randomDoc.data().title;
+
+    selectedMovieTitle.textContent = `🎬 Сьогодні дивимось: ${title}`;
+    document.body.classList.add('cinema-mode');
+    cinemaOverlay.style.display = 'flex';
+    cinemaMusic.play();
+
+    let seconds = 10;
+    countdownTimer.textContent = `⏳ Починаємо через: ${seconds} сек`;
+    const interval = setInterval(() => {
+      seconds--;
+      countdownTimer.textContent = `⏳ Починаємо через: ${seconds} сек`;
+      if (seconds <= 0) {
+        clearInterval(interval);
+        countdownTimer.textContent = "🍿 Починаємо!";
+      }
+    }, 1000);
+  });
+};
+
+function endCinemaMode() {
+  document.body.classList.remove('cinema-mode');
+  cinemaOverlay.style.display = 'none';
+  cinemaMusic.pause();
+}
 const firebaseConfig = {
   apiKey: "AIzaSyCeNS4shFoJu1oeviQ_plcd6Un84Maj5pI",
   authDomain: "movies-night-87f5f.firebaseapp.com",
