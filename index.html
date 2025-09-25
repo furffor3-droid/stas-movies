@@ -94,6 +94,7 @@ th{color:var(--muted);font-size:13px}
 <input id="titleInput" type="text" placeholder="Назва фільму" />
 </div>
 <div>
+<button id="startSharedSession">🎥 Почати перегляд разом</button>
 <button id="startCinemaBtn">🎥 Почати вечір</button>
 <button id="addBtn">Додати/Зберегти</button>
 <button id="clearBtn" class="ghost">Очистити</button>
@@ -141,6 +142,12 @@ const selectedMovieTitle = document.getElementById('selectedMovieTitle');
 const countdownTimer = document.getElementById('countdownTimer');
 const cinemaMusic = document.getElementById('cinemaMusic');
 
+document.getElementById("startSharedSession").onclick = () => {
+  db.collection("sessions").doc("shared-session").set({
+    movie: "Interstellar",
+    startTime: firebase.firestore.Timestamp.now().seconds + 30 // через 30 сек
+  });
+};
 startCinemaBtn.onclick = () => {
   db.collection("movies").get().then(snapshot => {
     const docs = snapshot.docs;
@@ -199,7 +206,32 @@ function renderStars(rating, id, person) {
   html += `</div>`;
   return html;
 }
+db.collection("sessions").doc("shared-session").onSnapshot(doc => {
+  const data = doc.data();
+  const now = Math.floor(Date.now() / 1000);
+  const countdown = data.startTime - now;
 
+  if (countdown > 0) {
+    showCountdown(countdown); // function showCountdown(seconds) {
+  const timerEl = document.getElementById("countdown");
+  timerEl.textContent = `⏳ Починаємо через: ${seconds} сек`;
+
+  const interval = setInterval(() => {
+    seconds--;
+    timerEl.textContent = `⏳ Починаємо через: ${seconds} сек`;
+    if (seconds <= 0) {
+      clearInterval(interval);
+      timerEl.textContent = "🍿 Починаємо!";
+    }
+  }, 1000);
+}
+  } else {
+    startMovie(data.movie); // function startMovie(title) {
+  document.body.classList.add("cinema-mode");
+  document.getElementById("movieTitle").textContent = `🎬 ${title}`;
+   }
+  }
+});
 function renderMovie(doc) {
   const m = doc.data();
   const tr = document.createElement('tr');
