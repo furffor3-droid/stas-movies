@@ -272,15 +272,31 @@ function allowDrop(e) {
   e.preventDefault();
 }
 
-function drop(e) {
+async function drop(e) {
   e.preventDefault();
-  const targetId = e.target.closest('tr').dataset.id;
-  if (!draggedId || !targetId || draggedId === targetId) return;
+  const targetRow = e.target.closest('tr');
+  if (!draggedId || !targetRow) return;
 
-  const now = Date.now();
-  db.collection("movies").doc(draggedId).update({ order: now });
-  db.collection("movies").doc(targetId).update({ order: now + 1 });
+  const targetId = targetRow.dataset.id;
+  if (draggedId === targetId) return;
+
+  try {
+    const draggedDoc = await db.collection("movies").doc(draggedId).get();
+    const targetDoc = await db.collection("movies").doc(targetId).get();
+
+    const draggedOrder = draggedDoc.data().order || Date.now();
+    const targetOrder = targetDoc.data().order || Date.now() + 1;
+
+    // Міняємо місцями order
+    await db.collection("movies").doc(draggedId).update({ order: targetOrder });
+    await db.collection("movies").doc(targetId).update({ order: draggedOrder });
+
+    console.log(`Поміняли місцями: ${draggedDoc.data().title} ↔ ${targetDoc.data().title}`);
+  } catch (err) {
+    console.error("Помилка при reorder:", err);
+  }
 }
+
 function load() {
   db.collection("movies").orderBy("order").onSnapshot(snapshot => {
     tbody.innerHTML = '';
