@@ -103,7 +103,13 @@ th{color:var(--muted);font-size:13px}
   <audio id="cinemaMusic" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
   <button onclick="endCinemaMode()">❌ Вийти з режиму</button>
 </div>
-<h1>Кіно-вечори Стасяна і Танюшки 🎬</h1>
+<h1>Кіно-вечори Стасяна і Танюшки 🎬</h1
+<div id="controls">
+  <button id="toggleBgBtn">Змінити фон</button>
+  <input type="file" id="uploadBg" accept="image/*">
+</div>
+<div id="thumbs"></div>
+
 <div class="row" style="justify-content:space-between;margin-bottom:12px">
 <div style="flex:1;margin-right:12px">
 <input id="titleInput" type="text" placeholder="Назва фільму" />
