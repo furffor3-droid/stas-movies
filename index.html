@@ -93,6 +93,40 @@ th{color:var(--muted);font-size:13px}
   transform: scale(1.05);
   box-shadow: 0 0 8px rgba(255,255,255,0.4);
 }
+  #bgGallery .thumbs-wrapper {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-color: #6ee7b7 transparent; /* колір скролу */
+  scrollbar-width: thin;
+}
+
+#bgGallery .thumbs-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+#bgGallery .thumbs-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+#bgGallery .thumbs-wrapper::-webkit-scrollbar-thumb {
+  background-color: #6ee7b7;
+  border-radius: 10px;
+}
+
+#bgGallery .bg-thumb {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#bgGallery .bg-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 </style>
 </head>
 <body>
@@ -147,7 +181,7 @@ th{color:var(--muted);font-size:13px}
 </table>
   <div id="bgGallery" style="margin-top:24px;">
   <h2 style="font-size:16px;">🎨 Вибери фон:</h2>
-  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+  <div class="thumbs-wrapper">
     <img class="bg-thumb" src="https://wallpapers.com/images/hd/totoro-satsuki-umbrella-rain-jy5aeq5zi6aa3y8l.jpg" />
     <img class="bg-thumb" src="https://tse4.mm.bing.net/th/id/OIP.Ch1-ePkhdrp9DIU5piI2ZQHaEK?rs=1&pid=ImgDetMain&o=7&rm=3" />
     <img class="bg-thumb" src="https://image.tmdb.org/t/p/original/uYxqCto2sr1zjdKpoEP0QcPdFxi.jpg" />
@@ -168,11 +202,7 @@ th{color:var(--muted);font-size:13px}
     <img class="bg-thumb" src="https://i.pinimg.com/1200x/86/18/1f/86181fc3b749c694989bf7f993ccc778.jpg" />
     <img class="bg-thumb" src="https://i.pinimg.com/1200x/76/95/ae/7695ae22e0ccaedbaba149be3a43d685.jpg" /> 
     <img class="bg-thumb" src="https://i.pinimg.com/1200x/e8/95/f5/e895f5ec8ddbd4014e46dfabf2d38a2a.jpg" />
-    
-    
-    
-    
-  </div>
+    </div>
 </div>
 <div id="empty" class="empty" style="display:none">Поки що список пустий — додай перший фільм вище.</div>
 </div>
